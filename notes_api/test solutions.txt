@@ -1,0 +1,76 @@
+2. uvicorn is both server and midiator which helps fast api to connect with database as fastapi send request to uvicorn and uvicorn transfer same to database and same return back to uvicorn.
+
+3. path parameter helps in finding user through url and id's as in url we have to make path : user/10 and that will return the user having id = 10 as same query parameter works but after the "?" as user?=shourya will help in finding any user having name with shourya.
+
+4. pydantic help in making data structure for the requesting and responding back.
+and fastapi use that to keep code clean and most important let take an example 
+user enterned there name as name=12345; which is invalid and if here we use pydantic there will be no errors or server will dont accept the in-appropriate responses of users.
+
+5. baseModal is the concept where we decide the user data format as we want there should be name in string age in integer mailid should be in emailStr so that all are basically a conditions only that will be only accepted from users if any user provided the wrong that wont be accepted . 
+
+SCEMEAS are the data structure which is to responeded my the fastapi lets understand with an example:
+in BaseModal we just asked for name , age , email but in Schemas we need user id that can be called as unique user id bcz those output should be stored in database and what if there are multiple user with same name so though schemas are the output that we get and stored in database .
+
+7. HTTPException is one of the important concept when any user provide any wrong value in inputs as exapmle email: qwwer intead of @gmail.com will crash the server but when there is HTTPException will lead to provide just an error and dont let the server crash or something one of the status code 422 which means any of the value provide by user is incorrect.
+
+8. if any coder created the fast api project as to see if the code is working perfectly as required there is an practice as used as swagger docs which help an coder to check there codes error are working fine providing the return value as per the requirements if those output are fine no error means codes are working.
+
+9. depends help is no repetition of code if any code used once it can be used multiple time as let understand with an example as :
+name(dependency): Str : min_length=3, max_length=60
+
+if we use name(dependecy) any where as our requirement the conditions will me remain same and there is no need to overwrite the code as already created once.
+
+10. synchronous means all the request are working and been called at same time weather there is any error or not but in asynsychronse there is condition if there are as example there are 5 calls in loop and one of them is taking time or any other reason then other 4 will compelete at first that means other will dont wait of the that single one which in not responding vice versa in synchronous if one responding then the other will also wait of that one .
+
+SECTION B 
+1. python3 -m venv venv
+1.2. source venv/bin/activate
+
+
+
+
+2. pip install  fastapi 
+   pip install uvicorn
+   
+3.pip install pydantic
+
+4. pip freeze > requirement.txt (will run this code in terminal and all installed packages will be written in that particular file.
+
+5. pip install packages
+
+6. uvicorn main:app --reload
+
+7. after making changes 
+git status
+git add .
+git push
+git status
+
+SECTION C
+1. fast_api(project_file)
+main.py -file
+routes - folder routes.py: route which contain main api calling
+                internal.py: conatain non-public api used
+schemas - folder - main.py: which conatain the output data structure that how will be the output been passed.
+Modals - folder - main.py - here will be the baseModal that how user will asked for and what form the values been recorded.
+
+2. The reason is to seprate the folders ias to make code more clearn what if we having large scale project and there the n numbers of devlopers are working that make difficult to find things in one file that for the main reason to make there task more simpler they created the folder for every different purpose and it shows the structured work form of developers.
+
+4. requirement file contain the packages details including there version but there should no version been written as what if any of the devloper have the different version will lead him/her to upgrade or degrade those that the reason that there should be no ver sion involved and also no unnecessary packages should be there they will just increase the size of that file and project itself.  
+
+SECTION D
+1. items = {
+"name": Str;
+"price": float;
+"in_stock" = Optional: True
+}
+
+3. 
+@app.get("/todos/{todo_id}")
+def get_todo(todo_id: int):
+if todo._id == todo_id
+return todo
+
+HTTPException(
+status_code=404;
+details="todo not found")
