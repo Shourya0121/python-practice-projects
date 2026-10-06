@@ -3,9 +3,11 @@ from sqlalchemy.orm import session
 
 from app.database import get_db
 from app.models.user import User
-from app.utils.jwt import create_access_token
+from app.utils.jwt import create_access_token, create_refresh_token, SECRET_KEY, ALGORITHM
 from app.schemas.auth import LoginRequest
 from app.utils.password import verify_password
+from jose import jwt
+from jose.exceptions import JWTError
 
 router = APIRouter(
     prefix="/auth",
@@ -36,7 +38,7 @@ def login(
     ).first()
 
     if not user:
-        HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
@@ -59,10 +61,61 @@ def login(
 
     access_token = create_access_token({
         "sub": str(user.id),
-        "username": str(user.username)
+        "username": str(user.username),
+        "role": str(user.role)
 })
+    refresh_token = create_refresh_token({
+           "sub": str(user.id),
+            "username": str(user.username),
+            "role": str(user.role)
+    })
 
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer"
 }
+
+
+@router.post("/refresh")
+def refresh_access_token(refresh_token: str):
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid refresh token"
+    )
+
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        user_id = payload.get("sub")
+        username = payload.get("username")
+        role = payload.get("role")
+        token_type = payload.get("type")
+
+        if (
+            user_id is None
+            or username is None
+            or role is None
+            or token_type != "refresh"
+        ):
+            raise credentials_exception
+
+    except JWTError:
+        raise credentials_exception
+
+    new_access_token = create_access_token({
+        "sub": user_id,
+        "username": username,
+        "role": role
+    })
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer"
+    }
+             

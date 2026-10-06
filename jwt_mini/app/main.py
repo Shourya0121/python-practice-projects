@@ -4,7 +4,7 @@ from app.utils.jwt import create_access_token
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.utils.jwt import create_access_token
-from app.routers import tasks
+from app.routers import tasks, admin, auth, users
 
 
 app = FastAPI(
@@ -16,6 +16,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(tasks.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def home():

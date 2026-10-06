@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "postgresql://postgres:123456@localhost:5432/jwt_mini_db"
+DATABASE_URL = "mysql+pymysql://jwt_user:jwt_password@localhost:3306/jwt_mini_db"
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(

@@ -26,8 +26,16 @@ def get_current_user(token: str = Depends(oauth_scheme)):
 
         user_id = payload.get("sub")
         username = payload.get("username")
+        role = payload.get("role")
+        token = payload.get("type")
 
-        if user_id is None or username is None:
+        if(
+
+        user_id is None
+        or username is None
+        or role is None 
+        or token != "access"
+        ):
             raise CredientialErrors
 
     except JWTError:
@@ -35,5 +43,17 @@ def get_current_user(token: str = Depends(oauth_scheme)):
 
     return {
     "id": user_id,
-    "username" :username
+    "username":username,
+    "role": role
 }
+
+def get_current_admin(
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    return current_user
