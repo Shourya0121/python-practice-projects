@@ -1,15 +1,21 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
+from app.utils.jwt import is_token_revoked
+from app.database import get_db
+from sqlalchemy.orm import Session
 
-from app.utils.jwt import SECRET_KEY, ALGORITHM
+from app.config import JWT_SECRET_KEY, JWT_ALGORITHM
 
 oauth_scheme = OAuth2PasswordBearer(
     tokenUrl="auth/login"
 )
 
 
-def get_current_user(token: str = Depends(oauth_scheme)):
+def get_current_user(
+    token: str = Depends(oauth_scheme),
+    db: Session = Depends(get_db)
+):
 
     CredientialErrors = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -20,9 +26,12 @@ def get_current_user(token: str = Depends(oauth_scheme)):
     try: 
         payload = jwt.decode(
             token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
+            JWT_SECRET_KEY,
+            algorithms=[JWT_ALGORITHM]
     )
+
+        if is_token_revoked(db, token):
+            raise CredientialErrors
 
         user_id = payload.get("sub")
         username = payload.get("username")

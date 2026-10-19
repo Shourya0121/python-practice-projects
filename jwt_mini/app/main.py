@@ -3,9 +3,11 @@ from fastapi import FastAPI
 from app.utils.jwt import create_access_token
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
-from app.utils.jwt import create_access_token
 from app.routers import tasks, admin, auth, users
+from app.database import Base, engine
+from app import models
 
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="JWT Authentication",

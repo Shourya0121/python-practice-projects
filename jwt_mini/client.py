@@ -1,4 +1,5 @@
 import requests
+import time
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -19,7 +20,7 @@ def login():
     print("login status:", response.status_code)
     print("login response:", response.json())
 
-    if response.status_code != 200:
+    if response.status_code !=200:
         return
 
     data = response.json()
@@ -37,7 +38,7 @@ def refresh_access_token():
 
     response = requests.post(
         f"{BASE_URL}/auth/refresh",
-        json={
+        params={
             "refresh_token": refresh_token
         }
     )
@@ -66,6 +67,19 @@ def get_current_user():
     )
 
     print("user request status:", response.status_code)
+    if response.status_code == 401:
+        print("Access token is invalid")
+        print("Trying to refresh access token...")
+
+        if refresh_access_token():
+            response = requests.get(
+                f"{BASE_URL}/users/me",
+                headers={
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+            print("Retry status:", response.status_code)
+
     print(response.json())
 
 login()

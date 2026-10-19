@@ -1,0 +1,1 @@
+from app.models.revoked_token import RevokedToken, RevokedFamily

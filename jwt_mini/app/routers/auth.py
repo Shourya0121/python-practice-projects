@@ -3,29 +3,69 @@ from sqlalchemy.orm import session
 
 from app.database import get_db
 from app.models.user import User
-from app.utils.jwt import create_access_token, create_refresh_token, SECRET_KEY, ALGORITHM
-from app.schemas.auth import LoginRequest
-from app.utils.password import verify_password
+
+from app.utils.jwt import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+    revoke_token,
+    is_token_revoked,
+    revoke_family,
+    is_family_revoked,
+)
+from app.config import JWT_SECRET_KEY, JWT_ALGORITHM
+from app.schemas.auth import LoginRequest, RegisterRequest
 from jose import jwt
 from jose.exceptions import JWTError
+from app.dependencies.auth import oauth_scheme
+
+
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+@router.post("/register")
+def register(
+     user_data: RegisterRequest,
+     db: session = Depends(get_db)
+):
 
-fake_users = [
-    {
-        "id": 1,
-        "username": "shourya",
-        "password" : "$argon2id$v=19$m=65536,t=3,p=4$XDd8htRTC/tsPgZN2U0Ivw$ezYokiLqSsnzGLr51mjywzkR0NgUaS8/DheN8FbSu10"
-    },
-    {
-        "id": 2,
-        "username": "admin",
-        "password" : "$argon2id$v=19$m=65536,t=3,p=4$R2a8sH1xMs+l/J/t/8YPGQ$LaXNfhXzTRNf/hYEIdzjWsuw87pb/698N95/DLLTwMo"
-    }
-]
+     existing_user = (
+          db.query(User)
+          .filter(User.username == user_data.username)
+          .first()
+     )
+
+     if existing_user:
+          raise HTTPException(
+               status_code=status.HTTP_400_BAD_REQUEST,
+               detail="Username already Exists"
+          )
+
+     new_user = User(
+          username=user_data.username,
+          display_name=user_data.display_name,
+          hashed_password=hash_password(user_data.password),
+          role="user",
+          is_active=True
+     )
+
+     db.add(new_user)
+     db.commit()
+     db.refresh(new_user)
+
+     return {
+          "message": "This user successfully registered",
+          "user":{
+               "user_id": new_user.id,
+               "username": new_user.username,
+               "display_name": new_user.display_name,
+               "role": new_user.role,
+               "is_active": new_user.is_active
+          }
+     }
 
 @router.post("/login")
 def login(
@@ -78,7 +118,10 @@ def login(
 
 
 @router.post("/refresh")
-def refresh_access_token(refresh_token: str):
+def refresh_access_token(
+    refresh_token: str,
+    db: session = Depends(get_db)
+):
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,14 +131,39 @@ def refresh_access_token(refresh_token: str):
     try:
         payload = jwt.decode(
             refresh_token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
+            JWT_SECRET_KEY,
+            algorithms=[JWT_ALGORITHM]
         )
+
+        if is_token_revoked(db, refresh_token):
+            family_id = payload.get("family_id")
+
+            if family_id:
+                 revoke_family(db, family_id)
+
+            raise HTTPException(
+                status_code=401,
+                detail="Refresh token reuse detected. Token family has been revoked"
+        )
+
+        token_type = payload.get("type")
+
+        if token_type != "refresh":
+              raise HTTPException(
+                    status_code=401,
+                    detail="Invalid refresh token")
 
         user_id = payload.get("sub")
         username = payload.get("username")
         role = payload.get("role")
         token_type = payload.get("type")
+        family_id = payload.get("family_id")
+
+        if family_id and is_family_revoked(db, family_id):
+             raise HTTPException(
+                  status_code=401,
+                  detail="Token family has been revoked. Please login again."
+             )
 
         if (
             user_id is None
@@ -112,10 +180,48 @@ def refresh_access_token(refresh_token: str):
         "sub": user_id,
         "username": username,
         "role": role
-    })
+})
+    new_refresh_token = create_refresh_token(
+    {
+         "sub": user_id,
+         "username": username,
+         "role": role 
+    },
+    family_id=family_id
+    )
+        
+
+    revoke_token(
+    db,
+    refresh_token,
+    "refresh",
+    family_id
+)
 
     return {
         "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }
+
+@router.post("/logout")
+def logout(
+    token: str = Depends(oauth_scheme),
+    refresh_token: str = "",
+    db: session = Depends(get_db)
+):
+      revoke_token(
+    db,
+    token,
+    "access"
+)
+      revoke_token(
+    db,
+    refresh_token,
+    "refresh"
+)
+
+      return {
+            "message": "Successfully logged out"
+      }
              
