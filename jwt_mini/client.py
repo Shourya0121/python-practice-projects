@@ -1,10 +1,10 @@
 import requests
-import time
 
 BASE_URL = "http://127.0.0.1:8000"
 
 access_token = None
 refresh_token = None
+
 
 def login():
     global access_token, refresh_token
@@ -12,18 +12,18 @@ def login():
     response = requests.post(
         f"{BASE_URL}/auth/login",
         json={
-        "username": "john",
-        "password": "john123"
-    }
+            "username": "john",
+            "password": "john123",
+        },
     )
 
     print("login status:", response.status_code)
-    print("login response:", response.json())
-
-    if response.status_code !=200:
-        return
+    if not response.ok:
+        print("login response:", response.text)
+        return False
 
     data = response.json()
+    print("login response:", data)
 
     access_token = data["access_token"]
     refresh_token = data["refresh_token"]
@@ -31,39 +31,37 @@ def login():
     print("Login Successful")
     print("Access token received")
     print("Refresh token received")
+    return True
 
 
 def refresh_access_token():
-    global access_token
+    global access_token, refresh_token
 
     response = requests.post(
         f"{BASE_URL}/auth/refresh",
-        params={
-            "refresh_token": refresh_token
-        }
+        params={"refresh_token": refresh_token},
     )
 
     print("refresh status:", response.status_code)
-    print("refresh response:", response.json())
-
-    if response.status_code !=200:
+    if not response.ok:
+        print("refresh response:", response.text)
         print("refresh failed")
         return False
 
     data = response.json()
+    print("refresh response:", data)
 
     access_token = data["access_token"]
+    refresh_token = data["refresh_token"]
 
     print("New Access token Received")
-
     return True
+
 
 def get_current_user():
     response = requests.get(
         f"{BASE_URL}/users/me",
-        headers={
-                "Authorization": f"Bearer {access_token}"
-        }
+        headers={"Authorization": f"Bearer {access_token}"},
     )
 
     print("user request status:", response.status_code)
@@ -74,13 +72,15 @@ def get_current_user():
         if refresh_access_token():
             response = requests.get(
                 f"{BASE_URL}/users/me",
-                headers={
-                    "Authorization": f"Bearer {access_token}"
-                }
+                headers={"Authorization": f"Bearer {access_token}"},
             )
             print("Retry status:", response.status_code)
 
-    print(response.json())
+    if response.ok:
+        print(response.json())
+    else:
+        print(response.text)
 
-login()
-get_current_user()
+
+if login():
+    get_current_user()

@@ -18,7 +18,8 @@ from app.config import JWT_SECRET_KEY, JWT_ALGORITHM
 from app.schemas.auth import LoginRequest, RegisterRequest
 from jose import jwt
 from jose.exceptions import JWTError
-from app.dependencies.auth import oauth_scheme
+from fastapi.security import HTTPAuthorizationCredentials
+from app.dependencies.auth import bearer_scheme
 
 
 
@@ -206,10 +207,11 @@ def refresh_access_token(
 
 @router.post("/logout")
 def logout(
-    token: str = Depends(oauth_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     refresh_token: str = "",
     db: session = Depends(get_db)
 ):
+      token = credentials.credentials
       revoke_token(
     db,
     token,

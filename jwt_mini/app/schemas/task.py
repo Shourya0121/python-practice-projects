@@ -17,10 +17,7 @@ class TaskUpdate(BaseModel):
 class TaskResponse(BaseModel):
     id: int
     title: str
-    Description: Optional[str] = None
+    description: Optional[str] = None
     completed: bool
     owner_id: int
     created_at: datetime
-
-    class config:
-        from_attribute = True

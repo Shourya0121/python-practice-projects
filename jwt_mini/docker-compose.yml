@@ -1,0 +1,29 @@
+
+services:
+  api:
+    build: .
+    container_name: jwt-container
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  db:
+     image: mysql:8.0
+     container_name: jwt-mysql
+     restart: always
+     environment:
+      MYSQL_ROOT_PASSWORD: super_secret_root
+      MYSQL_DATABASE: jwt_mini_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: 123456
+     ports:
+      - "3307:3306"
+    # Named volume for data persistence
+     volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

@@ -1,0 +1,21 @@
+/build 
+
+# Virtual Environment
+.venv/
+venv/
+
+# Secret and environment files 
+.env
+.env.
+.env.example 
+
+# Testing and coverage
+.pytest_cache/
+.covrage
+htmlcov/
+
+# Editors and oprating system
+.vscode/
+.idea/
+.DS_Store
+EOF
